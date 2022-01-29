@@ -15,7 +15,7 @@
 # 当前目录
 pwddir=`pwd`
 # 备份目录
-bakdir="/home/ubuntu/mysql_bak/soft_backup"
+bakdir="/home/lighthouse/mysql_bak/soft_backup"
 # 备份日期格式
 bakdate=`date +'%Y%m%d%H%M%S'`
 # 备份的文件名（tar进行打包）
@@ -39,11 +39,11 @@ mysql_password=""
 # 系统当前用户名
 whoami=`whoami`
 # 希望输出的备份文件的用户所有者（如果不是root用户执行该脚本，此参数不生效）
-bakowner="ubuntu:ubuntu"
+bakowner="lighthouse:lighthouse"
 # 还原时会创建的临时文件夹，用于存储解压的临时数据
 restore_folder=$bakdir"/.restore_"$bakdate
 # 还原数据库时需要输入的确认密码（还原数据库原则上不允许自动任务执行，只能手动执行）
-restore_password="Abc12345"
+restore_password="Tq1314520Jbh@123[]"
 # 存储所有数据库名称的变量
 database_all_name=`mysql $mysql_user $mysql_password -e "show databases;"|grep -Evi "database|infor|perfor"`
 # 删除过期的文件（七天）
@@ -166,14 +166,14 @@ gunzip(){
 	cd "$bakdir"
 	gunzip_file_name=$1
 	if [ ! -n "$gunzip_file_name" ];then
-		gunzip_file_name=`ls -t | head -n 1`
+		gunzip_file_name=`ls -t | grep ".*xz" | head -n 1`
 	fi
 	mkdir $restore_folder&&cd $restore_folder
 	cp ../$gunzip_file_name .
 	$a_restore_order $gunzip_file_name
-	gunzip_file_name=`ls -t | head -n 1`
+	gunzip_file_name=`ls -t | grep ".*tar" | head -n 1`
 	tar -xvf $gunzip_file_name&&rm $gunzip_file_name
-	$b_restore_order `ls | grep ".gz"`
+	$b_restore_order `ls | grep ".*gz"`
 }
 
 # 还原数据库
