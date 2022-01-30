@@ -166,8 +166,22 @@ gunzip(){
 	cd "$bakdir"
 	gunzip_file_name=$1
 	if [ ! -n "$gunzip_file_name" ];then
-		gunzip_file_name=`ls -t | grep ".*xz" | head -n 1`
+		gunzip_file_name=`ls -t | grep ".*tar.xz" | head -n 1`
+	else
+		# 如果文件名不包含后缀，自动带上后缀
+		if [[ ! $gunzip_file_name =~ .*tar$ ]];then
+			gunzip_file_name=$gunzip_file_name.tar
+		fi
+		if [[ ! $gunzip_file_name =~ .*xz$ ]];then
+			gunzip_file_name=$gunzip_file_name.xz
+		fi
+		if ! test -f "$bakdir/$gunzip_file_name";then
+			echo -e "\"$gunzip_file_name\" not exists."
+			exit 0;
+		fi
+
 	fi
+	
 	mkdir $restore_folder&&cd $restore_folder
 	cp ../$gunzip_file_name .
 	$a_restore_order $gunzip_file_name
@@ -219,34 +233,59 @@ if [ "$1" == "--all" ] || [ "$1" == "-A" ];then
 elif [ "$1" == "--databases" ] || [ "$1" == "-B" ];then
 	backup_some_databases $2
 elif [ "$1" == "--help" ] || [ "$1" == "-H" ];then
+	echo "* --------------------"
 	echo "mysqlbak --help"
 	echo "mysqlbak -H"
 	echo "* Help manual"
 	echo "* 帮助手册"
+	echo "* --------------------"
 	echo "mysqlbak --all"
 	echo "mysqlbak -A"
 	echo "* backup all databases"
 	echo "* 备份所有的数据库"
+	echo "* --------------------"
 	echo "mysqlbak --databases"
 	echo "mysqlbak -B"
 	echo "* backup some databases"
 	echo "* 备份一些数据库，由用户指定"
 	echo "* choose databases(seperate database_name with comma)"
 	echo "* 选择的数据库（多个数据库，则使用英文逗号隔开）"
+	echo "* --------------------"
+	echo "mysqlbak --restore"
+	echo "mysqlbak -R"
+	echo "* restore databases!(must be input password)"
+	echo "* 还原数据库（需要先输入密码）"
+	echo "* --------------------"
+	echo "* mysqkbak -R --all"
+	echo "* mysqlbak -R -A"
+	echo "* restore all databases!(must be input password)"
+	echo "* 还原所有数据库（需要先输入密码）"
+	echo "* --------------------"
+	echo "* mysqlbak -R -A --file"
+	echo "* mysqlbak -R -A -F"
+	echo "* restore all databases,but can assign backup_file(must be input password)"
+	echo "* 还原所有数据库，但可以指定选择的备份文件作为还原的文件来源（需要先输入密码）"
+	echo "* --------------------"
+	echo "* mysqlbak -R --some"
+	echo "* mysqlbak -R -S"
+	echo "* restore some databases!(must be input password)"
+	echo "* 还原部分数据库（需要先输入密码）"
+	echo "* --------------------"
+	echo "* mysqlbak -R -S --file"
+	echo "* mysqlbak -R -S -F"
+	echo "* restore some databases and you can assign backup_file(must be input password)"
+	echo "* 还原部分数据库，并且可以指定选择的备份文件作为还原的文件来源（需要先输入密码）"
+	echo "* --------------------"
 elif [ "$1" == "--restore" ] || [ "$1" == "-R" ];then
 	if [ "$2" == "-A" ] || [ "$1" == "--all" ];then
 		restore_confirmation
 		if [ "$3" == "-F" ] || [ "$3" == "--file" ];then
-			if test -f "$bakdir/$4";then
-				gunzip $4
-				restore_databases
-			elif [ ! -n "$4" ];then
+			if [ ! -n "$4" ];then
 				echo -e "\033[31myou have not input files name!\033[0m"
 				exit 0;
-			else
-				echo -e "\"$4\" not exists."
-				exit 0;
 			fi
+			gunzip $4
+			restore_databases
 		else
 			gunzip
 			restore_databases
@@ -254,20 +293,16 @@ elif [ "$1" == "--restore" ] || [ "$1" == "-R" ];then
 	elif [ "$2" == "-S" ] || [ "$2" == "--some" ];then
 		restore_confirmation
 		if [ "$3" == "-F" ] || [ "$3" == "--file" ];then
-			if test -f "$bakdir/$4";then
-				if [ ! -n "$5" ];then
-					echo -e "\033[31myou have not input sql files name!\033[0m"
-					exit 0;
-				fi
-				gunzip $4
-				restore_databases $5
-			elif [ ! -n "$4" ];then
+			if [ ! -n "$4" ];then
 				echo -e "\033[31myou have not input files name!\033[0m"
 				exit 0;
-			else
-				echo -e "\"$4\" not exists."
+			fi
+			if [ ! -n "$5" ];then
+				echo -e "\033[31myou have not input sql files name!\033[0m"
 				exit 0;
 			fi
+			gunzip $4
+			restore_databases $5
 		else
 			if [ ! -n "$3" ];then
 					echo -e "\033[31myou have not input sql files name!\033[0m"
@@ -290,16 +325,12 @@ elif [ "$1" == "--restore" ] || [ "$1" == "-R" ];then
 				ls -t -l $bakdir | grep --color=never ".*xz$"
 				echo "请选择备份文件（输入文件名）"
 				read -p "Please input the file name:" choose_file
-				if test -f "$bakdir/$choose_file";then
-					gunzip $choose_file
-					restore_databases
-				elif [ ! -n "$choose_file" ];then
+				if [ ! -n "$choose_file" ];then
 					echo -e "\033[31myou have not input files name!\033[0m"
 					exit 0;
-				else
-					echo -e "\"$choose_file\" not exists."
-					exit 0;
 				fi
+				gunzip $choose_file
+				restore_databases
 			elif [ "$choose_b" = "n" ] || [ "$choose_b" = "N" ];then
 				gunzip
 				restore_databases
@@ -311,16 +342,12 @@ elif [ "$1" == "--restore" ] || [ "$1" == "-R" ];then
 			if [ "$choose_b" = "y" ] || [ "$choose_b" = "Y" ];then
 				ls -t -l $bakdir | grep --color=never ".*xz$"
 				echo "请选择备份文件（输入文件名）"
-				read -p "Please input the file name:" choose_file
-				if test -f "$bakdir/$choose_file";then
-					gunzip $choose_file
-				elif [ ! -n "$choose_file" ];then
+				read -p "Please input the file name:" choose_file	
+				if [ ! -n "$choose_file" ];then
 					echo -e "\033[31myou have not input files name!\033[0m"
 					exit 0;
-				else
-					echo -e "\"$choose_file\" not exists."
-					exit 0;
 				fi
+				gunzip $choose_file
 
 				ls -t -l | grep --color=never ".*sql$"
 				echo "选择需要还原执行的SQL（多个SQL，则使用英文逗号隔开）"
