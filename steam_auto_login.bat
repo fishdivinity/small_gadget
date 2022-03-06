@@ -6,6 +6,7 @@ if '%errorlevel%' NEQ '0' (goto UACPrompt) else (goto UACAdmin)
 %1 start "" mshta vbscript:createobject("shell.application").shellexecute("""%~0""","::",,"runas",1)(window.close)&exit
 exit /B
 :UACAdmin
+chcp 936 >nul
 cd /d "%~dp0"
 echo 当前运行路径是：%CD%
 echo 已获取管理员权限
