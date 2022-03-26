@@ -46,6 +46,7 @@
 - KMS激活windows系统其实代码非常的简单，不需要下载安装什么KMS激活工具
 - 通常情况下，两句代码即可解决
 >slmgr /skms kms_server_url
+>
 >slmgr /ato
 
 **kms_server_url是可以使用的KMS服务器域名**
