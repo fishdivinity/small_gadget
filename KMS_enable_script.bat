@@ -70,4 +70,5 @@ IF "%choose%" equ "y" (
 echo ÍË³ö¼¤»î
 :END
 endlocal
-PAUSE
+timeout /T 3 /NOBREAK
+exit
