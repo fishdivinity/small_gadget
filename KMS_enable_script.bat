@@ -67,8 +67,8 @@ IF "%choose%" equ "y" (
   GOTO :END
   )
 
-echo 退出激活
+ECHO 退出激活
 :END
 endlocal
 timeout /T 3 /NOBREAK
-exit
+EXIT
