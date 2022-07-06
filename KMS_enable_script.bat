@@ -15,7 +15,7 @@ ECHO 请到KMS服务器列表上面找一下可用的
 ECHO https://www.coolhub.top/tech-articles/kms_list.html
 ECHO 替换一下可用的服务器域名到脚本即可
 ECHO.
-ECHO 请等待一段时间，正在检测可用的KMS激活域名
+ECHO 请等待一段时间，正在检测可用的KMS激活域名地址
 
 SET kms_List[0]*Value=kms.loli.beer
 SET kms_List[1]*Value=kms.loli.best
@@ -34,7 +34,7 @@ SET Kms_Index=0
 
 :LoopStart
 IF %Kms_Index% EQU %Kms_Length% (
-  ECHO 脚本内的域名都无法使用，请搜索可用域名
+  ECHO 脚本内的域名都无法使用，请搜索可用域名地址
   ECHO https://www.coolhub.top/tech-articles/kms_list.html
   GOTO :END
   )
@@ -54,38 +54,40 @@ GOTO LoopStart
 
 :KmsStart
 echo %kms_Current.Value%
-echo 这个KMS激活地址可用使用
+echo 这个KMS激活地址可以使用
 SET /p choose=是否开始激活[y/n]:
 IF "%choose%" equ "Y" (
-  ::解决部分用户KMS激活时的错误：0x80072EE2在运行Microsoft Windows非核心版本的计算上，运行slui.exe
-  sc config wuauserv start=auto
-  sc config bits start=auto
-  sc config DcomLaunch start=auto
-  net stop wuauserv
-  net start wuauserv
-  net stop bits
-  net start bits
-  net stop DcomLaunch
-  net start DcomLaunch
-  ::开始激活
+  REM 解决部分用户KMS激活时的错误：0x80072EE2在运行Microsoft Windows非核心版本的计算上，运行slui.exe
+  REM 大部分介绍，0x80072EE2错误码皆是因为Windows Update服务没有开启导致的
+  REM 下面的代码分别是启动了Windows Update服务、BITS (后台智能传送服务) 、DCOM Server Process Launcher协议
+  sc config wuauserv start=auto >nul
+  sc config bits start=auto >nul
+  sc config DcomLaunch start=auto >nul
+  net stop wuauserv >nul
+  net start wuauserv >nul
+  net stop bits >nul
+  net start bits >nul
+  net stop DcomLaunch >nul
+  net start DcomLaunch >nul
+  REM 开始激活
   slmgr /skms %kms_Current.Value%
   slmgr /ato
   GOTO :END
   )
 IF "%choose%" equ "y" (
-  ::解决部分用户KMS激活时的错误：0x80072EE2在运行Microsoft Windows非核心版本的计算上，运行slui.exe
-  ::大部分介绍，0x80072EE2错误码皆是因为Windows Update服务没有开启导致的
-  ::下面的代码分别是启动了Windows Update服务、BITS (后台智能传送服务) 、DCOM Server Process Launcher协议
-  sc config wuauserv start=auto
-  sc config bits start=auto
-  sc config DcomLaunch start=auto
-  net stop wuauserv
-  net start wuauserv
-  net stop bits
-  net start bits
-  net stop DcomLaunch
-  net start DcomLaunch
-  ::开始激活
+  REM 解决部分用户KMS激活时的错误：0x80072EE2在运行Microsoft Windows非核心版本的计算上，运行slui.exe
+  REM 大部分介绍，0x80072EE2错误码皆是因为Windows Update服务没有开启导致的
+  REM 下面的代码分别是启动了Windows Update服务、BITS (后台智能传送服务) 、DCOM Server Process Launcher协议
+  sc config wuauserv start=auto >nul
+  sc config bits start=auto >nul
+  sc config DcomLaunch start=auto >nul
+  net stop wuauserv >nul
+  net start wuauserv >nul
+  net stop bits >nul
+  net start bits >nul
+  net stop DcomLaunch >nul
+  net start DcomLaunch >nul
+  REM 开始激活
   slmgr /skms %kms_Current.Value%
   slmgr /ato
   GOTO :END
