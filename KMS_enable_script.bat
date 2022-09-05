@@ -1,4 +1,6 @@
 @ECHO off & setlocal
+REM author£ºfishdivinity
+REM https://github.com/fishdivinity/small_gadget/blob/master/KMS_enable_script.bat
 if exist "%SystemRoot%\SysWOW64" path %path%;%windir%\SysNative;%SystemRoot%\SysWOW64;%~dp0
 bcdedit >nul
 if '%errorlevel%' NEQ '0' (goto UACPrompt) else (goto UACAdmin)

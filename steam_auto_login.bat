@@ -21,7 +21,7 @@ taskkill /f /im SteamService.exe
 echo 请输入Steam登录地区(1.中国；2.俄罗斯；3.香港)：
 rem 根据输入来判断登录账号
 set /p area=
-rem 修改steam默认账户注册表。如果输入为1，则登录Steam账号为：fishdivinity
+rem 修改steam默认账户注册表。如果输入为1，则登录Steam账号为：account[0]
 if /i %area% == 1 (REG ADD HKEY_CURRENT_USER\SOFTWARE\Valve\Steam /v AutoLoginUser /t REG_SZ /d %account[0]% /f)
 if /i %area% == 2 (REG ADD HKEY_CURRENT_USER\SOFTWARE\Valve\Steam /v AutoLoginUser /t REG_SZ /d %account[1]% /f)
 if /i %area% == 3 (REG ADD HKEY_CURRENT_USER\SOFTWARE\Valve\Steam /v AutoLoginUser /t REG_SZ /d %account[2]% /f)
