@@ -9,6 +9,7 @@ if '%errorlevel%' NEQ '0' (goto UACPrompt) else (goto UACAdmin)
 exit /B
 :UACAdmin
 cd /d "%~dp0"
+reg add HKEY_CURRENT_USER\Console /v QuickEdit /t REG_DWORD /d 00000000 /f > nul
 CHCP 936 >nul
 ECHO 这是KMS激活脚本
 ECHO 是为了方便激活Winwodows系统编写的
