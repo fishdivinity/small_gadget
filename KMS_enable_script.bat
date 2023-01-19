@@ -18,6 +18,21 @@ ECHO 请到KMS服务器列表上面找一下可用的
 ECHO https://www.coolhub.top/tech-articles/kms_list.html
 ECHO 替换一下可用的服务器域名到脚本即可
 ECHO.
+
+ECHO 如果之前激活时有0xC0020036错误：在Windows非核心版本的计算机上
+ECHO 可以选择卸载密钥并重新安装密钥
+ECHO.
+
+SET /p choose=是否选择重装密钥[y/n]:
+REM 激活码是网上找的win10专业版
+IF "%choose%" equ "Y" (
+  slmgr /upk
+  slmgr /ipk TPYNC-4J6KF-4B4GP-2HD89-7XMP6
+  )
+IF "%choose%" equ "y" (
+  slmgr /upk
+  slmgr /ipk TPYNC-4J6KF-4B4GP-2HD89-7XMP6
+  )
 ECHO 请等待一段时间，正在检测可用的KMS激活域名地址
 
 SET kms_List[0]*Value=kms.loli.beer
@@ -48,7 +63,13 @@ FOR /F "usebackq delims==* tokens=1-3" %%I IN (`SET kms_List[%Kms_Index%]`) DO (
   SET kms_Current.%%J=%%K
 )
 
+REM 如果出现假死，则是因为cmd的快速编辑模式愿意
+REM 解决方案一：执行过程中，出现假死，随便输入一个字符
+REM 解决方案二：将下面的stdout重定向到nul的代码删掉
+
+REM ping %kms_Current.Value% -n 1
 ping %kms_Current.Value% -n 1 >nul
+
 IF %ERRORLEVEL%==0 GOTO :KmsStart
 
 SET /A Kms_Index=%Kms_Index% + 1
