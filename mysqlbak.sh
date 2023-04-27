@@ -1,21 +1,26 @@
 #!/bin/bash
-
+# 
 #
 # author:fishdivinity
 #
-
+# 
 # 如果普通用户使用发生问题，可以切换到root权限试试
 #sudo su
-
+# 
 # 为避免出现以下警告
 # mysql: [Warning] Using a password on the command line interface can be insecure.
 # 使用以下命令，在用户的家目录下生成隐藏文件".mylogin.cnf"
-# mysql_config_editor set --user=root --host=localhost --port=3306 --password
+# 具体如何使用该命令，可bing搜索一下
+# 如果不执行下面的命令，需要启用 $mysql_user $mysql_password
+# mysql_config_editor set --user=root --host=localhost --port=3306 --password=rzhc@yizhiyun
+# mysql_config_editor set --user=fishdivinity --host=localhost --port=3306 --password=Tq1314520Jbh@123[]
 
+# 脚本需要使用的变量
+# ***********************
 # 当前目录
 pwddir=`pwd`
 # 备份目录
-bakdir="/home/lighthouse/mysql_bak/soft_backup"
+bakdir="/usr/data/pdm/backup/soft_backup"
 # 备份日期格式
 bakdate=`date +'%Y%m%d%H%M%S'`
 # 备份的文件名（tar进行打包）
@@ -30,26 +35,52 @@ a_restore_order="xz -d"
 b_restore_order="gzip -d"
 # mysql用户名
 # 格式如下：-umysql_user
-# 例如：-proot
-mysql_user=""
+# 例如：-uroot
+mysql_user="-uroot"
 # mysql用户密码
 # 格式如下：-puser_password
 # 例如：-p123456
-mysql_password=""
+mysql_password="-p123456"
 # 系统当前用户名
 whoami=`whoami`
 # 希望输出的备份文件的用户所有者（如果不是root用户执行该脚本，此参数不生效）
-bakowner="lighthouse:lighthouse"
+bakowner="ubuntu:ubuntu"
 # 还原时会创建的临时文件夹，用于存储解压的临时数据
 restore_folder=$bakdir"/.restore_"$bakdate
 # 还原数据库时需要输入的确认密码（还原数据库原则上不允许自动任务执行，只能手动执行）
-restore_password="Tq1314520Jbh@123[]"
+restore_password="123456"
+# ***********************
+
+
+# 备份命令
+# ***********************
+# docker 容器版本
+docker_name="mysql"							
 # 存储所有数据库名称的变量
-database_all_name=`mysql $mysql_user $mysql_password -e "show databases;"|grep -Evi "database|infor|perfor"`
+database_all_name=`docker exec $docker_name mysql $mysql_user $mysql_password -s -e "show databases;"|grep -Evi "Warning|database|infor|perfor"|tr -d "\r"`
+# 如果已经在mysqldump.cnf里面添加了user和password，这里不需要明文表示用户和密码
+prefix_backup="docker exec $docker_name bash -c 'exec "
+suffix_backup="'"
+#
+#
+# 物理机版本
+# docker_name=""			
+# 存储所有数据库名称的变量
+# database_all_name=`mysql $mysql_user $mysql_password -s -e "show databases;"|grep -Evi "Warning|database|infor|perfor"|tr -d "\r"`
+# 如果已经在mysqldump.cnf里面添加了user和password，这里不需要明文表示用户和密码
+# backup_order="mysqldump ${mysql_user} ${mysql_password} -q -B ${dbname}|${b_compress_order}>${dbname}.sql.gz"
+# ***********************
+
+
 # 删除过期的文件（七天）
+# ***********************
 # find $bakdir/ -type f -mtime +7 -name "mysql_*.tar.xz" -exec rm -rf {} \;
 # 因为我已经cd 到备份的目录了，所以这里直接 . 就好
 # find . -type f -mtime +7 -name "mysql_*.tar.xz" -exec rm -rf {} \;
+# find . -type f -mtime +$date_number -name "mysql_*.tar.xz" -exec rm -rf {} \;
+date_number=30
+# ***********************
+
 
 # shell脚本执行中可能用到的临时变量
 # ***********************
@@ -60,22 +91,25 @@ database_name_array=""
 database_name=""
 dbname_all=""
 dbname=""
-# restore_file_suffix=".*sql$"
 backup_while_number=0
 gunzip_file_name=""
 restore_function_parameter=""
+backup_order=""
+restore_order=""
 # ***********************
 
 
 # 备份所有数据库的函数
 backup_all(){
 	# backup all databases
-	cd "$bakdir"
-	touch "$bakfile"
+	cd "${bakdir}"
+	touch "${bakfile}"
 	for dbname in ${database_all_name[@]}
 	do
 		# 因为已经在mysqldump.cnf里面添加了user和password，这里不需要明文表示用户和密码
-		mysqldump $mysql_user $mysql_password -q -B $dbname | $b_compress_order >${dbname}.sql.gz
+		# $prefix_mysqldump mysqldump $mysql_user $mysql_password -q -B $dbname | $b_compress_order >${dbname}.sql.gz
+		backup_order="${prefix_backup} mysqldump ${mysql_user} ${mysql_password} -q -B ${dbname}${suffix_backup}|${b_compress_order}>${dbname}.sql.gz"
+		echo ${backup_order} | awk '{run=$0;system(run)}'
 		tar -rvf "$bakfile" ${dbname}.sql.gz
 	done
 	echo -e "\033[33mclear all file about *.sql.gz\033[0m"
@@ -87,7 +121,7 @@ backup_all(){
 	fi
 	echo -e "\033[33mtar all databases to $bakfile.xz\033[0m"
 	# delete seven days ago mysql backup file
-	find . -type f -mtime +7 -name "mysql_*.tar.xz" -exec rm -rf {} \;
+	find . -type f -mtime +$date_number -name "mysql_*.tar.xz" -exec rm -rf {} \;
 	cd "$pwddir"
 }
 
@@ -107,7 +141,9 @@ backup_some_databases(){
 			do
 				if [ $dbname_all == $dbname ];then
 					# 因为已经在mysqldump.cnf里面添加了user和password，这里不需要明文表示用户和密码
-					mysqldump $mysql_user $mysql_password -q -B $dbname | $b_compress_order >${dbname}.sql.gz
+					# $prefix_mysqldump mysqldump $mysql_user $mysql_password -q -B $dbname | $b_compress_order >${dbname}.sql.gz
+					backup_order="${prefix_backup} mysqldump ${mysql_user} ${mysql_password} -q -B ${dbname}${suffix_backup}|${b_compress_order}>${dbname}.sql.gz"
+					echo ${backup_order} | awk '{run=$0;system(run)}'
 					tar -rvf "$bakfile" ${dbname}.sql.gz
 					let backup_while_number=backup_while_number+1
 				fi
@@ -123,7 +159,7 @@ backup_some_databases(){
 			fi
 			echo -e "\033[33mtar all databases to $bakfile.xz\033[0m"
 			# delete seven days ago mysql backup file
-			find . -type f -mtime +7 -name "mysql_*.tar.xz" -exec rm -rf {} \;
+			find . -type f -mtime +$date_number -name "mysql_*.tar.xz" -exec rm -rf {} \;
 		else
 			echo -e "\033[33m$1 not exist\033[0m"
 			rm $bakfile
@@ -200,7 +236,17 @@ restore_databases(){
 		for dbname_all in `ls`
 		do
 			echo -e "\033[34mmysql < $dbname_all\033[0m"
-			mysql $mysql_user $mysql_password < $dbname_all
+			if [ "${docker_name}"x != ""x ];then
+				docker cp ${dbname_all} ${docker_name}:/opt
+				# mysql $mysql_user $mysql_password < $dbname_all
+				restore_order="${prefix_backup} mysql ${mysql_user} ${mysql_password} < /opt/${dbname_all}${suffix_backup}"
+				echo ${restore_order} | awk '{run=$0;system(run)}'
+				docker exec ${docker_name} bash -c "rm /opt/${dbname_all}"
+			else
+				restore_order="mysql ${mysql_user} ${mysql_password} < ${dbname_all}"
+				echo ${restore_order} | awk '{run=$0;system(run)}'
+			fi
+			
 			echo -e "\033[33m$dbname_all OK!\033[0m"
 		done
 	else
@@ -218,7 +264,16 @@ restore_databases(){
 			do
 				if [ $dbname_all == $dbname ];then
 					echo -e "\033[34mmysql < $dbname_all\033[0m"
-					mysql $mysql_user $mysql_password < $dbname_all
+					if [ "${docker_name}"x != ""x ];then
+						docker cp ${dbname_all} ${docker_name}:/opt
+						restore_order="${prefix_backup} mysql ${mysql_user} ${mysql_password} < /opt/${dbname_all}${suffix_backup}"
+						echo ${restore_order} | awk '{run=$0;system(run)}'
+						docker exec ${docker_name} bash -c "rm /opt/${dbname_all}"
+					else
+						restore_order="mysql ${mysql_user} ${mysql_password} < ${dbname_all}"
+						echo ${restore_order} | awk '{run=$0;system(run)}'
+					fi
+					
 					echo -e "\033[33m$dbname_all OK!\033[0m"
 				fi
 			done
@@ -370,7 +425,7 @@ elif [ ! -n "$1" ];then
 		backup_all
 	elif [ "$choose" = "n" ] || [ "$choose" = "N" ];then
 		echo -e "databases:\033[33m\r"
-		echo `mysql $mysql_user $mysql_password -e "show databases;"|tail +2`
+		echo $database_all_name
 		echo -e "\033[0m选择的数据库（多个数据库，则使用英文逗号隔开）"
 		read -p "choose databases(seperate database_name with comma):" database_name_array
 		backup_some_databases $database_name_array
@@ -395,7 +450,11 @@ whoami=`whoami`
 bakowner=""
 restore_folder=""
 restore_password=""
+docker_name=""
 database_all_name=""
+prefix_backup=""
+suffix_backup=""
+date_number=0
 
 choose=""
 choose_b=""
@@ -404,6 +463,7 @@ database_name_array=""
 database_name=""
 dbname_all=""
 dbname=""
-# restore_file_suffix=""
 backup_while_number=0
 restore_function_parameter=""
+backup_order=""
+restore_order=""
